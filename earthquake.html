@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earthquake Monitoring</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        header, footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        .info {
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Earthquake Monitoring System</h1>
+    </header>
+    
+    <div id="map"></div>
+    <div class="info" id="info"></div>
+    
+    <footer>
+        <p>&copy; 2025 Earthquake Monitoring. All Rights Reserved.</p>
+    </footer>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        function fetchEarthquakes() {
+            fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('info').innerHTML = `<h3>Recent Earthquakes</h3>`;
+                    data.features.forEach(eq => {
+                        const coords = eq.geometry.coordinates;
+                        const magnitude = eq.properties.mag;
+                        const place = eq.properties.place;
+                        const time = new Date(eq.properties.time).toLocaleString();
+                        const depth = coords[2];
+
+                        const marker = L.circleMarker([coords[1], coords[0]], {
+                            radius: magnitude * 3,
+                            color: magnitude > 5 ? 'red' : magnitude > 3 ? 'orange' : 'green',
+                            fillOpacity: 0.5
+                        }).addTo(map);
+
+                        marker.bindPopup(`<b>${place}</b><br>Magnitude: ${magnitude}<br>Depth: ${depth} km<br>Time: ${time}`).openPopup();
+                    });
+                })
+                .catch(error => console.error('Error fetching earthquake data:', error));
+        }
+
+        fetchEarthquakes();
+    </script>
+</body>
+</html>
